@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海洋动物分类模型</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* 科技感网格背景 */
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                    linear-gradient(rgba(30, 41, 59, 0.3) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(30, 41, 59, 0.3) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* 装饰性光晕 */
+        .glow-effect {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: 0;
+            opacity: 0.2;
+        }
+
+        .glow-blue {
+            background: radial-gradient(circle, #3b82f6, transparent 70%);
+            top: -200px;
+            right: -200px;
+        }
+
+        .glow-cyan {
+            background: radial-gradient(circle, #06b6d4, transparent 70%);
+            bottom: -200px;
+            left: -200px;
+        }
+
+        .container {
+            background: rgba(15, 23, 42, 0.85);
+            border-radius: 16px;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.15);
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+        }
+
+        .container::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #06b6d4, transparent);
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 40px rgba(59, 130, 246, 0.25);
+        }
+
+        h1 {
+            color: #e2e8f0;
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        h1 i {
+            color: #3b82f6;
+            text-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            margin-bottom: 30px;
+            font-size: 16px;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .subtitle::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(59, 130, 246, 0.4);
+            border-radius: 12px;
+            padding: 40px 20px;
+            margin: 25px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(30, 41, 59, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+            transition: 0.5s;
+        }
+
+        .upload-area:hover::before, .upload-area.dragover::before {
+            left: 100%;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            background: rgba(30, 41, 59, 0.5);
+            border-color: #3b82f6;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+
+        .upload-icon {
+            font-size: 60px;
+            color: #3b82f6;
+            margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover .upload-icon {
+            transform: scale(1.1);
+            color: #60a5fa;
+        }
+
+        .upload-area p {
+            color: #e2e8f0;
+        }
+
+        .file-info {
+            margin-top: 15px;
+            color: #94a3b8;
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            width: 100%;
+            margin: 15px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 20px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #334155;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn:disabled::before {
+            display: none;
+        }
+
+        #result {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 12px;
+            font-size: 18px;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #result::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            opacity: 0.5;
+        }
+
+        .result-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        .success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .success::before {
+            background: linear-gradient(90deg, transparent, #10b981, transparent);
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .error::before {
+            background: linear-gradient(90deg, transparent, #ef4444, transparent);
+        }
+
+        .loading {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .loading::before {
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+        }
+
+        .prediction-class {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #e2e8f0;
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+        }
+
+        .confidence {
+            font-size: 18px;
+            color: #94a3b8;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #06b6d4);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 1s ease-in-out;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+
+        .loading-animation {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .loading-animation i {
+            color: #3b82f6;
+            text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+        }
+
+        .loading-animation p {
+            color: #94a3b8;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .upload-area {
+                padding: 30px 15px;
+            }
+
+            .glow-effect {
+                width: 400px;
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- 装饰性光晕效果 -->
+<div class="glow-effect glow-blue"></div>
+<div class="glow-effect glow-cyan"></div>
+
+<div class="container">
+    <h1><i class="fas fa-fish"></i> 海洋动物分类模型</h1>
+    <p class="subtitle">上传海洋生物图片，AI将自动识别种类</p>
+
+    <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">
+            <i class="fas fa-cloud-upload-alt"></i>
+        </div>
+        <p>点击选择图片或拖拽图片到此处</p>
+        <p class="file-info">支持 JPG、PNG 格式</p>
+        <input type="file" id="fileInput" accept="image/jpg,image/png,image/jpeg">
+    </div>
+
+    <button class="btn" onclick="uploadAndPredict()" id="predictBtn">
+        <i class="fas fa-paper-plane"></i> 上传并预测
+    </button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    // 拖拽上传功能
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+
+    uploadArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+
+        if (e.dataTransfer.files.length) {
+            fileInput.files = e.dataTransfer.files;
+            updateFileInfo();
+        }
+    });
+
+    fileInput.addEventListener('change', updateFileInfo);
+
+    function updateFileInfo() {
+        const fileInfo = document.querySelector('.file-info');
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            fileInfo.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        } else {
+            fileInfo.textContent = '支持 JPG、PNG 格式';
+        }
+    }
+
+    function uploadAndPredict() {
+        const resultDiv = document.getElementById('result');
+        const file = fileInput.files[0];
+        const predictBtn = document.getElementById('predictBtn');
+
+        // 校验文件
+        if (!file) {
+            showResult('❌ 请先选择一张图片！', 'error');
+            return;
+        }
+
+        // 禁用按钮并显示加载状态
+        predictBtn.disabled = true;
+        predictBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 正在预测...';
+
+        // 显示加载动画
+        showResult('<div class="loading-animation"><i class="fas fa-spinner fa-spin fa-2x"></i><p>AI正在分析中...</p></div>', 'loading');
+
+        // 构造FormData
+        const formData = new FormData();
+        formData.append('file', file);
+
+        // 调用SpringBoot接口
+        fetch('/api/predict', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+        })
+            .then(response => {
+                return response.json().then(data => ({
+                    status: response.status,
+                    data: data
+                }));
+            })
+            .then(({ status, data }) => {
+                if (status === 200) {
+                    if (data.code === 200) {
+                        const className = data.data.final_pred_class;
+                        const confidence = (data.data.final_pred_prob * 100).toFixed(2);
+
+                        const resultContent = `
+                                <div class="result-content">
+                                    <i class="fas fa-check-circle fa-2x"></i>
+                                    <p>预测成功！</p>
+                                    <div class="prediction-class">${className}</div>
+                                    <div class="confidence">置信度: ${confidence}%</div>
+                                    <div class="progress-bar">
+                                        <div class="progress" style="width: ${confidence}%"></div>
+                                    </div>
+                                </div>
+                            `;
+                        showResult(resultContent, 'success');
+                    } else {
+                        showResult(`❌ 预测失败：${data.msg || '未知错误'}`, 'error');
+                    }
+                } else {
+                    const errMsg = data.detail || '服务器内部错误';
+                    showResult(`❌ 预测失败：${errMsg}`, 'error');
+                }
+            })
+            .catch(error => {
+                showResult(`❌ 请求出错：${error.message || '无法连接到服务器'}`, 'error');
+                console.error('调试信息：', error);
+            })
+            .finally(() => {
+                // 重新启用按钮
+                predictBtn.disabled = false;
+                predictBtn.innerHTML = '<i class="fas fa-paper-plane"></i> 上传并预测';
+            });
+    }
+
+    function showResult(content, type) {
+        const resultDiv = document.getElementById('result');
+        resultDiv.className = type;
+        resultDiv.innerHTML = content;
+    }
+</script>
+</body>
+</html>
